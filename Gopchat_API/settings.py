@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'chats',
+    'users',
+    'phonenumber_field',
 ]
 
 MIDDLEWARE = [
@@ -77,10 +80,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'nikitazlain',
-        'PASSWORD': '',
-        'USER':'nikitazlain',
-        'HOST':'127.0.0.1',
-        'PORT':'5432',
+        'PASSWORD': '131196',
+        'USER': 'nikitazlain',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 
@@ -103,6 +106,23 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+SMS_AUTH = {
+    'REQUEST_URL': 'https://api.twilio.com/2010-04-01/Accounts/AC68756590d42eaf5004a91578af85e243/Messages.json',
+    'ACCOUNT_SID': 'AC68756590d42eaf5004a91578af85e243',
+    'AUTH_TOKEN': 'a60c1e586ddd4580c54911497ab15426',
+    'FROM_NUMBER': '+12054154471',
+    'ATTEMPTS_LIMIT': 5,
+    'CODE_LIFETIME': 5 * 60,
+    'ATTEMPTS_LIFETIME': 10,
+    'DEBUG_CODE': '00000',
+}
+
+REDIS = {
+    'HOST': 'localhost',
+    'PORT': '6379',
+    'PASSWORD': None,
+    'DB': 1,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/

@@ -1,5 +1,5 @@
-django-phonenumber_fields,
-psycopg2,
-django,
-djangorestframework,
+django
+django-phonenumber-field
+psycopg2
+djangorestframework
 redis
