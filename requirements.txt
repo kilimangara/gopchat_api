@@ -3,3 +3,4 @@ django-phonenumber-field
 psycopg2
 djangorestframework
 redis
+requests
