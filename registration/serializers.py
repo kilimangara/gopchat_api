@@ -20,6 +20,10 @@ class ErrorToStringMixin(object):
         return text
 
 
+class IsNewSerializer(serializers.Serializer, ErrorToStringMixin):
+    is_new = serializers.BooleanField(default=False, write_only=True)
+
+
 class PhoneSerializer(serializers.Serializer, ErrorToStringMixin):
     phone = PhoneNumberField()
 

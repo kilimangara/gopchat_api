@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
 
 FIELD_MAX_LENGTH = 255
@@ -29,9 +31,18 @@ class User(models.Model):
         return True
 
 
+@receiver(post_save, sender=User)
+def new_user(instance, created, **kwargs):
+    if not created:
+        return
+    Contacts.objects.filter(phone=instance.phone).update(contacted=instance)
+
+
 class Contacts(models.Model):
-    contacted = models.ForeignKey("User", related_name="contacted_to")
-    contacted_by = models.ForeignKey("User", related_name="contacted_from")
+    contacted = models.ForeignKey("User", models.SET_NULL,related_name="contacted_to", null=True)
+    contacted_by = models.ForeignKey("User",models.CASCADE, related_name="contacted_from")
+    phone = PhoneNumberField()
+    name = models.CharField(max_length=FIELD_MAX_LENGTH, null=True)
 
     class Meta:
         unique_together = ['contacted', 'contacted_by']

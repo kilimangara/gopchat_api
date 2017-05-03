@@ -70,6 +70,16 @@ TEMPLATES = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASS': [
+        'authtoken.authenrication.RedisTokenAuthentication'
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'EXCEPTION_HANDLER': 'base.responses.auth_exception_handler',
+}
+
 WSGI_APPLICATION = 'Gopchat_API.wsgi.application'
 
 
