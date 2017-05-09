@@ -1,7 +1,13 @@
+from collections import Iterable
+
+from bulk_update.helper import bulk_update
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
+from django.db.transaction import atomic
 from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
+
+from authtoken import token
 
 FIELD_MAX_LENGTH = 255
 
@@ -30,6 +36,41 @@ class User(models.Model):
     def is_authenticated(self):
         return True
 
+    def remove_from_blacklist(self, user_id):
+        self.blocks.filter(blocked_to_id=user_id).delete()
+
+    def add_to_contacts(self, phones, names):
+        if isinstance(phones, Iterable) and not isinstance(phones, str):
+            input_contacts = dict(zip(phones, names))
+        else:
+            # if single contact
+            input_contacts = {phones: names}
+        old_contacts = self.contacts.filter(phone__in=input_contacts.keys())
+        contacted_user_ids = []
+        for contact in old_contacts:
+            phone = contact.phone
+            contact.name = input_contacts[phone]
+            input_contacts.pop(phone)
+            if contact.user_to_id is not None:
+                contacted_user_ids.append(contact.user_to_id)
+        registered_phones = dict(User.objects.filter(phone__in=input_contacts.keys()).values_list('phone', 'id'))
+        to_create = []
+        for phone, name in input_contacts.items():
+            user_to_id = registered_phones.get(phone, None)
+            c = Contacts(contacted_from=self, contacted_to_id=user_to_id, phone=phone, name=name)
+            to_create.append(c)
+            if user_to_id is not None:
+                contacted_user_ids.append(c.user_to_id)
+        with atomic():
+            bulk_update(old_contacts, update_fields=['name'])
+            Contacts.objects.bulk_create(to_create)
+        return User.objects.filter(id__in=contacted_user_ids)
+
+
+@receiver(pre_delete, sender=User)
+def delete_user(instance, **kwargs):
+    token.delete(instance.id)
+
 
 @receiver(post_save, sender=User)
 def new_user(instance, created, **kwargs):
@@ -39,8 +80,8 @@ def new_user(instance, created, **kwargs):
 
 
 class Contacts(models.Model):
-    contacted = models.ForeignKey("User", models.SET_NULL,related_name="contacted_to", null=True)
-    contacted_by = models.ForeignKey("User",models.CASCADE, related_name="contacted_from")
+    contacted = models.ForeignKey("User", models.SET_NULL, related_name="contacted_to", null=True)
+    contacted_by = models.ForeignKey("User", models.CASCADE, related_name="contacted_from")
     phone = PhoneNumberField()
     name = models.CharField(max_length=FIELD_MAX_LENGTH, null=True)
 
@@ -49,8 +90,8 @@ class Contacts(models.Model):
 
 
 class BlackList(models.Model):
-    blocked = models.ForeignKey("User", related_name="blocked_to")
-    blocked_by = models.ForeignKey("User", related_name="blocked_from")
+    blocked = models.ForeignKey("User", models.CASCADE, related_name="blocked_to")
+    blocked_by = models.ForeignKey("User", models.CASCADE, related_name="blocked_from")
 
     class Meta:
         unique_together = ['blocked', 'blocked_by']

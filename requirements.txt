@@ -4,3 +4,4 @@ psycopg2
 djangorestframework
 redis
 requests
+django-bulk-update
